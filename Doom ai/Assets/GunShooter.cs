@@ -8,6 +8,10 @@ public class GunShooter : MonoBehaviour
     public float range = 50f;
     public float fireRate = 0.2f;
 
+    [Header("Effects")]
+    public ParticleSystem muzzleFlash;
+    public AudioSource gunAudio;
+
     [Header("References")]
     public Camera playerCamera;
 
@@ -15,7 +19,6 @@ public class GunShooter : MonoBehaviour
 
     private void Update()
     {
-        // Poll the Input System directly
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
             TryShoot();
@@ -30,9 +33,20 @@ public class GunShooter : MonoBehaviour
         nextFireTime = Time.time + fireRate;
         Shoot();
     }
+    public GameObject enemyHitEffect;
+    public HitMarker hitMarker;
+
 
     private void Shoot()
     {
+        // Play effects
+        if (muzzleFlash != null)
+            muzzleFlash.Play();
+
+        if (gunAudio != null)
+            gunAudio.Play();
+
+        // Hitscan raycast
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
 
         if (Physics.Raycast(ray, out RaycastHit hit, range))
@@ -41,6 +55,10 @@ public class GunShooter : MonoBehaviour
             if (enemy != null)
             {
                 enemy.TakeDamage((int)damage);
+                if (enemyHitEffect != null)
+                    Instantiate(enemyHitEffect, hit.point, Quaternion.identity);
+
+                hitMarker?.Flash();
             }
 
             Debug.Log("Hit: " + hit.transform.name);
