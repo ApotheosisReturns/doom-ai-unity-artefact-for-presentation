@@ -2,16 +2,17 @@ using UnityEngine;
 
 public class EnemyRangedAttack : MonoBehaviour
 {
-    public GameObject projectilePrefab;
-    public Transform firePoint;
-    public float attackCooldown = 2f;
-    public float attackRange = 25f;
+    public GameObject projectilePrefab;  // Projectile to spawn
+    public Transform firePoint;          // Where projectiles spawn
+    public float attackCooldown = 2f;    // Time between shots
+    public float attackRange = 20f;      // Max distance to shoot
 
-    private float nextAttackTime = 0f;
-    private Transform player;
+    private float nextAttackTime = 0f;   // Tracks cooldown
+    private Transform player;            // Player reference
 
     private void Start()
     {
+        // Find player by tag
         player = GameObject.FindWithTag("Player").transform;
     }
 
@@ -21,6 +22,7 @@ public class EnemyRangedAttack : MonoBehaviour
 
         float distance = Vector3.Distance(transform.position, player.position);
 
+        // Only attack if player is close enough and cooldown expired
         if (distance <= attackRange && Time.time >= nextAttackTime)
         {
             Attack();
@@ -30,14 +32,14 @@ public class EnemyRangedAttack : MonoBehaviour
 
     private void Attack()
     {
-        Debug.Log("Enemy is attacking!");
-
+        // Face the player before shooting
         transform.LookAt(player);
 
+        // Spawn projectile
         GameObject proj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
 
+        // Launch projectile toward player
         Vector3 dir = (player.position - firePoint.position).normalized;
-
         proj.GetComponent<Projectile>().Launch(dir);
     }
 }

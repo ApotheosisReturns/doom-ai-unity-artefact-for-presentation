@@ -2,20 +2,23 @@ using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
 {
-    public float maxHealth = 100f;
-    public float currentHealth;
+    public float maxHealth = 100f;   // Maximum health
+    public float currentHealth;      // Current health
 
     private void Start()
     {
+        // Initialize health
         currentHealth = maxHealth;
     }
 
     public void TakeDamage(float amount)
     {
+        // Reduce health
         currentHealth -= amount;
 
-        Debug.Log("Player took damage: " + amount + " | Current health: " + currentHealth);
+        Debug.Log("Player took damage: " + amount);
 
+        // Check for death
         if (currentHealth <= 0)
         {
             Die();
@@ -25,6 +28,7 @@ public class PlayerHealth : MonoBehaviour
     private void Die()
     {
         Debug.Log("PLAYER DEAD");
-        // Disable movement, play death animation, reload scene, etc.
+
+        // TODO: Disable movement, play animation, reload scene, etc.
     }
 }
