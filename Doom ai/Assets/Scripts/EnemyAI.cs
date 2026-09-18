@@ -2,45 +2,61 @@ using UnityEngine;
 
 public class EnemyAI : MonoBehaviour
 {
-    // --- Enemy finite state machine ---
-    // These states represent the enemy's behaviour at any moment.
     private enum EnemyState
     {
-        Idle,       // Enemy is not aware of the player
-        Chase,      // Enemy sees player and moves toward them
-        Attack,     // Enemy is close enough to attack
-        Pain,       // Enemy has been hit and briefly stunned
-        Dead        // Enemy is dead and no longer acts
+        Idle,
+        Chase,
+        Attack,
+        Pain,
+        Dead
     }
 
     [Header("References")]
-    public Transform player;   // Reference to the player transform
+    public Transform player;
 
     [Header("Movement")]
-    public float moveSpeed = 3f;     // Speed when chasing the player
-    public float sightRange = 15f;   // Max distance enemy can detect player
-    public float attackRange = 2f;   // Distance required to attack
+    public float moveSpeed = 3f;
+    public float sightRange = 15f;
+    public float attackRange = 2f;
 
     [Header("Combat")]
-    public float attackCooldown = 1f; // Time between melee attacks
-    private float attackTimer;        // Internal cooldown timer
+    public float attackCooldown = 1f;
+    public float attackDamage = 10f;
+    private float attackTimer;
 
     [Header("Health")]
-    public int maxHealth = 100;       // Maximum HP
-    private int currentHealth;        // Current HP
+    public int maxHealth = 100;
+    private int currentHealth;
 
-    // Current behaviour state
+    // Damage feedback components
+    private EnemyFlashRed flashEffect;
+    private EnemyFlinch flinch;
+
     private EnemyState currentState = EnemyState.Idle;
 
     private void Start()
     {
-        // Initialize health when enemy spawns
         currentHealth = maxHealth;
+
+        flashEffect = GetComponent<EnemyFlashRed>();
+        flinch = GetComponent<EnemyFlinch>();
+
+        // Auto-find player if not assigned
+        if (player == null)
+        {
+            GameObject playerObject = GameObject.FindWithTag("Player");
+
+            if (playerObject != null)
+                player = playerObject.transform;
+        }
     }
 
     private void Update()
     {
-        // Main behaviour loop — runs every frame
+        // Enemy cannot do anything while flinching
+        if (flinch != null && flinch.IsFlinching)
+            return;
+
         switch (currentState)
         {
             case EnemyState.Idle:
@@ -60,53 +76,40 @@ public class EnemyAI : MonoBehaviour
                 break;
 
             case EnemyState.Dead:
-                // No behaviour when dead
                 break;
         }
     }
 
-    // --- IDLE STATE ---
-    // Enemy stands still until it sees the player.
     private void HandleIdle()
     {
         if (CanSeePlayer())
-            currentState = EnemyState.Chase; // Transition to chase
+            currentState = EnemyState.Chase;
     }
 
-    // --- CHASE STATE ---
-    // Enemy moves directly toward the player.
     private void HandleChase()
     {
-        // If player is no longer visible, return to idle
         if (!CanSeePlayer())
         {
             currentState = EnemyState.Idle;
             return;
         }
 
-        // Check distance to player
         float dist = Vector3.Distance(transform.position, player.position);
 
-        // If close enough, switch to attack state
         if (dist <= attackRange)
         {
             currentState = EnemyState.Attack;
             return;
         }
 
-        // Move toward player
         Vector3 dir = (player.position - transform.position).normalized;
-        transform.position += dir * moveSpeed * Time.deltaTime;
 
-        // Face the player
+        transform.position += dir * moveSpeed * Time.deltaTime;
         transform.LookAt(player);
     }
 
-    // --- ATTACK STATE ---
-    // Enemy performs melee attacks when close enough.
     private void HandleAttack()
     {
-        // If player is out of sight, stop attacking
         if (!CanSeePlayer())
         {
             currentState = EnemyState.Idle;
@@ -115,81 +118,85 @@ public class EnemyAI : MonoBehaviour
 
         float dist = Vector3.Distance(transform.position, player.position);
 
-        // If player moved away, return to chase
         if (dist > attackRange)
         {
             currentState = EnemyState.Chase;
             return;
         }
 
-        // Count down attack cooldown
         attackTimer -= Time.deltaTime;
 
-        // Perform attack when cooldown expires
         if (attackTimer <= 0f)
         {
-            Debug.Log("Enemy attacks player");
+            PlayerHealth playerHealth =
+                player.GetComponent<PlayerHealth>();
 
-            // TODO: Apply damage to player here
-            // player.GetComponent<PlayerHealth>().TakeDamage(10);
+            if (playerHealth != null)
+            {
+                playerHealth.TakeDamage(attackDamage);
+            }
 
-            attackTimer = attackCooldown; // Reset cooldown
+            attackTimer = attackCooldown;
         }
     }
 
-    // --- PAIN STATE ---
-    // Enemy briefly stunned after taking damage.
     private void HandlePain()
     {
-        // If enemy still sees player, resume chase
+        // Wait until flinch ends
+        if (flinch != null && flinch.IsFlinching)
+            return;
+
         if (CanSeePlayer())
             currentState = EnemyState.Chase;
         else
             currentState = EnemyState.Idle;
     }
 
-    // --- LINE OF SIGHT CHECK ---
-    // Uses raycast to determine if enemy can see the player.
     private bool CanSeePlayer()
     {
-        if (player == null) return false;
+        if (player == null)
+            return false;
 
-        Vector3 dir = (player.position - transform.position);
+        Vector3 dir = player.position - transform.position;
 
-        // Too far away to see
-        if (dir.magnitude > sightRange) return false;
+        if (dir.magnitude > sightRange)
+            return false;
 
-        // Raycast from enemy's eye level toward player
-        Ray ray = new Ray(transform.position + Vector3.up, dir.normalized);
+        Ray ray = new Ray(
+            transform.position + Vector3.up,
+            dir.normalized
+        );
 
         if (Physics.Raycast(ray, out RaycastHit hit, sightRange))
         {
-            // If ray hits the player, enemy has line of sight
             return hit.transform == player;
         }
 
         return false;
     }
 
-    // --- DAMAGE HANDLING ---
     public void TakeDamage(int amount)
     {
-        if (currentState == EnemyState.Dead) return;
+        if (currentState == EnemyState.Dead)
+            return;
 
         currentHealth -= amount;
 
-        // If health reaches zero, die
+        // Flash red
+        flashEffect?.Flash();
+
+        // Trigger flinch
+        flinch?.Flinch();
+
+        // Die if HP reaches 0
         if (currentHealth <= 0)
         {
             currentState = EnemyState.Dead;
-
-            // Disable enemy object (or play death animation)
             gameObject.SetActive(false);
+            return;
         }
-        else
-        {
-            // Enter pain state when hit
-            currentState = EnemyState.Pain;
-        }
+
+        // Enter pain state
+        currentState = EnemyState.Pain;
     }
 }
