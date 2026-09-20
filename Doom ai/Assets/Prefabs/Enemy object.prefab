@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 8804955279873890992}
   - component: {fileID: 6123190050727808117}
   - component: {fileID: 5221817623359364114}
+  - component: {fileID: 4282502256965987208}
+  - component: {fileID: 2726006683983146760}
   m_Layer: 0
   m_Name: Enemy object
   m_TagString: Untagged
@@ -160,4 +162,32 @@ MonoBehaviour:
   sightRange: 15
   attackRange: 2
   attackCooldown: 1
+  attackDamage: 10
   maxHealth: 100
+--- !u!114 &4282502256965987208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1024179805198515716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7e2ec791e2a39246813c55c471dc1d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyFlashRed
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  flashDuration: 0.1
+--- !u!114 &2726006683983146760
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1024179805198515716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec1ca04e24765f640813109fd9eb1524, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyFlinch
+  flinchDuration: 0.25
