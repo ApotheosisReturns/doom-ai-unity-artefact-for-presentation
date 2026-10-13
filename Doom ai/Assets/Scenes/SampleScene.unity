@@ -7149,6 +7149,10 @@ PrefabInstance:
       propertyPath: attackCooldown
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6474420888623780707, guid: 3bc7890875228f644946dc58fee66880, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7769348864854600706, guid: 3bc7890875228f644946dc58fee66880, type: 3}
       propertyPath: m_Name
       value: LostSoulCharger
