@@ -2,84 +2,134 @@ using UnityEngine;
 
 public class FlyingEnemy : MonoBehaviour
 {
-    // --- Movement ---
-    public float moveSpeed = 3f;       // Chase speed
-    public float hoverHeight = 1f;     // Hover bob amplitude
-    public float hoverSpeed = 2f;      // Hover bob frequency
+    [Header("Detection")]
+    public float detectionRange = 15f;
 
-    // --- Combat ---
-    public float attackRange = 15f;    // Max shooting distance
-    public float attackCooldown = 2f;  // Time between shots
+    [Header("Movement")]
+    public float moveSpeed = 3f;
+    public float hoverHeight = 1f;
+    public float hoverSpeed = 2f;
+
+    [Header("Combat")]
+    public float attackRange = 15f;
+    public float attackCooldown = 2f;
     public GameObject projectilePrefab;
     public Transform firePoint;
 
-    // --- Health ---
+    [Header("Health")]
     public int maxHealth = 50;
+
     private int currentHealth;
 
-    private Transform player;          // Player reference
-    private float nextAttackTime = 0f; // Attack cooldown timer
-    private float baseY;               // Base hover height
+    private Transform player;
+    private float nextAttackTime = 0f;
+    private float baseY;
+
+    private bool isAwake = false;
 
     private void Start()
     {
-        player = GameObject.FindWithTag("Player").transform;
-        currentHealth = maxHealth;
+        GameObject playerObject = GameObject.FindWithTag("Player");
 
-        // Store starting Y position for hovering
+        if (playerObject != null)
+            player = playerObject.transform;
+
+        currentHealth = maxHealth;
         baseY = transform.position.y;
     }
 
     private void Update()
     {
-        if (player == null) return;
+        if (player == null)
+            return;
 
         Hover();
+
+        DetectPlayer();
+
+        // Stay idle until player is detected
+        if (!isAwake)
+            return;
+
         ChasePlayer();
         TryAttack();
     }
 
+    private void DetectPlayer()
+    {
+        if (isAwake)
+            return;
+
+        float distance =
+            Vector3.Distance(
+                transform.position,
+                player.position);
+
+        if (distance <= detectionRange)
+        {
+            isAwake = true;
+        }
+    }
+
     private void Hover()
     {
-        // Sin wave vertical bobbing
-        float hoverOffset = Mathf.Sin(Time.time * hoverSpeed) * hoverHeight;
+        float hoverOffset =
+            Mathf.Sin(Time.time * hoverSpeed) *
+            hoverHeight;
 
         Vector3 pos = transform.position;
         pos.y = baseY + hoverOffset;
+
         transform.position = pos;
     }
 
     private void ChasePlayer()
     {
-        // Move directly toward player
-        Vector3 dir = (player.position - transform.position).normalized;
-        transform.position += dir * moveSpeed * Time.deltaTime;
+        Vector3 dir =
+            (player.position - transform.position)
+            .normalized;
 
-        // Always face the player
+        transform.position +=
+            dir *
+            moveSpeed *
+            Time.deltaTime;
+
         transform.LookAt(player);
     }
 
     private void TryAttack()
     {
-        float dist = Vector3.Distance(transform.position, player.position);
+        float dist =
+            Vector3.Distance(
+                transform.position,
+                player.position);
 
-        // Shoot if close enough and cooldown expired
-        if (dist <= attackRange && Time.time >= nextAttackTime)
+        if (dist <= attackRange &&
+            Time.time >= nextAttackTime)
         {
             Attack();
-            nextAttackTime = Time.time + attackCooldown;
+
+            nextAttackTime =
+                Time.time + attackCooldown;
         }
     }
 
     private void Attack()
     {
-        if (projectilePrefab == null || firePoint == null) return;
+        if (projectilePrefab == null ||
+            firePoint == null)
+            return;
 
-        // Spawn projectile
-        GameObject proj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+        GameObject proj =
+            Instantiate(
+                projectilePrefab,
+                firePoint.position,
+                firePoint.rotation);
 
-        // Launch toward player
-        Vector3 dir = (player.position - firePoint.position).normalized;
+        Vector3 dir =
+            (player.position - firePoint.position)
+            .normalized;
+
         proj.GetComponent<Projectile>().Launch(dir);
     }
 
@@ -88,11 +138,8 @@ public class FlyingEnemy : MonoBehaviour
         currentHealth -= amount;
 
         if (currentHealth <= 0)
-            Die();
-    }
-
-    private void Die()
-    {
-        Destroy(gameObject);
+        {
+            Destroy(gameObject);
+        }
     }
 }
